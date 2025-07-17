@@ -1,28 +1,49 @@
 import streamlit as st
-import pandas as pd
-from sentence_transformers import SentenceTransformer, util
+import requests
 
-st.set_page_config(page_title="Movie Recommender", layout="centered")
-model=SentenceTransformer('all-MiniLM-L6-v2')
+st.set_page_config(page_title="🎬 MoodieFlix 🍿", page_icon="🎥")
+st.title("🎥 MoodieFlix")
+st.markdown("Tell me what kind of movie you want, and I'll recommend the perfect one!")
 
-movies=pd.read_csv("tmdb_5000_movies.csv")
 
-movies['combined']=movies['title'] + " - " + movies['overview'].fillna('')
+OPENROUTER_API_KEY = st.secrets["OPENROUTER_API_KEY"]
 
-st.title("Movie Recommendation")
-user_input= st.text_input("What Do you feel like Watching ?")
 
-movie_embeddings= model.encode(movies['combined'].tolist(), convert_to_tensor=True) 
+prompt = st.text_input(
+    "What Do you want to watch ?",
+    placeholder="e.g., I want a romantic comedy with a strong female lead",
+)
 
-if user_input:
-    query_embedding=model.encode(user_input,convert_to_tensor=True)
-    scores=util.cos_sim(query_embedding,movie_embeddings)[0]
+# LLM Call using OpenRouter
+def get_movie_recommendation(prompt):
+    headers = {
+        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+        "HTTP-Referer": "https://moodieflix.streamlit.app", 
+        "X-Title": "MoodieFlix Recommender"
+    }
 
-    st.write("🔍 Searching for movies that match your vibe...")
+    payload = {
+        "model": "openai/gpt-3.5-turbo",  
+        "messages": [
+            {
+                "role": "system",
+                "content": "You're a movie expert. Recommend movies based on user mood, genre preferences, or emotional needs. Be friendly and concise."
+            },
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ]
+    }
 
-    top_indices=scores.argsort(descending=True)[:5]
-    st.subheader("🎥 Recommended Movies:")
+    try:
+        response = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=payload)
+        response.raise_for_status()
+        return response.json()["choices"][0]["message"]["content"]
+    except Exception as e:
+        return f"❌ Error: {e}"
 
-    for idx in top_indices:
-        st.write(f"**{movies.iloc[idx]['title']}** - {movies.iloc[idx]['overview']}")
-    
+if prompt:
+    with st.spinner("Finding your perfect movie... 🎬"):
+        recommendation = get_movie_recommendation(prompt)
+        st.markdown(recommendation)
