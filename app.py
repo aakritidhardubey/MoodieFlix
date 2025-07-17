@@ -194,7 +194,7 @@ def get_recommendation(prompt):
         "messages": [
             {
                 "role": "system",
-                "content": """You're a movie expert. Recommend 3-5 movies based on user requests. Format with movie titles in bold using **Movie Title** and include brief descriptions after each title. Each movie should be clearly separated."""
+                "content": """You're a movie expert. Recommend 6-7 movies based on user requests. Format with movie titles in bold using **Movie Title** and include brief descriptions after each title. Each movie should be clearly separated."""
             },
             {
                 "role": "user",
