@@ -16,7 +16,7 @@ def check_credentials(username, password):
     
     return False
 
-def register_user(username, email, password):
+def register_user(username, password):
     users = get_user_collection()
     hashed = hash_password(password)
     users.insert_one({
